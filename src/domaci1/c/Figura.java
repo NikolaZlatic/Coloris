@@ -35,9 +35,11 @@ public class Figura {
     public Figura(int n){
         polja = new Rectangle[3];
         for(int i = 0; i < 3 ; i++){
-            polja[i] = new Rectangle(70 + n * 200, (a * i) + 100 - (n * 70), a, a);
+            polja[i] = new Rectangle(70 + n * 200, (a * i) + 90 - (n * 70), a, a);
             int j = (int) (Math.random() * 5);
             polja[i].setFill(izbor[j]);
+            polja[i].setArcHeight(5);
+            polja[i].setArcWidth(5);
         }
        if(n == 0) active = false;
        else active = true;

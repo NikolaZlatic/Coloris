@@ -6,6 +6,10 @@
 package domaci1.c;
 
 import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Stop;
+import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 
 /**
@@ -19,7 +23,8 @@ public class Semafor extends Rectangle{
         super(x,y,250,120);
         setStroke(Color.GRAY);
         setStrokeWidth(15);
-        
-    }
-    
+        setArcWidth(12);
+        setArcHeight(12);
+ 
+    } 
 }

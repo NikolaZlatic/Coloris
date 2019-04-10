@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
@@ -17,7 +18,11 @@ import javafx.scene.Scene;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Stop;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -36,6 +41,14 @@ public class Domaci1C extends Application{
     private Broj brScore;
     private static Broj brLast;
     private static int brojProvera;
+    private Text gameOverText;
+    private double time;
+    private int brake;
+    private Broj brRaw;
+    private Polygon levaGranica;
+    private Polygon desnaGranica;
+    private Polygon donjaGranica;
+    private static int brUnistenih;
     
     private Rectangle [][] polja;
     
@@ -52,9 +65,11 @@ public class Domaci1C extends Application{
 
     @Override
     public void start(Stage stage) throws Exception {
-        
+        time = 0;
         gameOver = false;
         brojProvera = 0;
+        brake = 0;
+        brUnistenih = 0;
         
         polja = new Rectangle[7][20];
         figure = new ArrayList<>();
@@ -88,21 +103,25 @@ public class Domaci1C extends Application{
         
         root.getChildren().addAll(c,o,l,o2,r,i,s);
         
-        Granica g = new Granica();
-        root.getChildren().add(g);
+        dodavanjeGranice();
+        //Granica g = new Granica();
+        //root.getChildren().add(g);
         
-        Semafor score = new Semafor(500, 27);
-        root.getChildren().add(score);
+        //Semafor score = new Semafor(500, 27);
+        //root.getChildren().add(score);
+        addAll2(500,30);
         SemaforText textScore = new SemaforText("SCORE", 0);
         root.getChildren().add(textScore);
         
-        Semafor last = new Semafor(500, 240);
-        root.getChildren().add(last);
+        //Semafor last = new Semafor(500, 240);
+        //root.getChildren().add(last);
+        addAll2(500,240);
         SemaforText textLast = new SemaforText("LAST", 1);
         root.getChildren().add(textLast);
         
-        Semafor brake = new Semafor(500, 453);
-        root.getChildren().add(brake);
+        //Semafor brake = new Semafor(500, 453);
+        //root.getChildren().add(brake);
+        addAll2(500,450);
         SemaforText textBrake = new SemaforText("BRAKE          RAW", 2);
         root.getChildren().add(textBrake);
         
@@ -112,7 +131,7 @@ public class Domaci1C extends Application{
         brLast = new Broj(0,1);
         root.getChildren().add(brLast);
         
-        Broj brRaw = new Broj(11,2);
+        brRaw = new Broj(07,2);
         root.getChildren().add(brRaw);
         
         doradaGranice();
@@ -123,6 +142,57 @@ public class Domaci1C extends Application{
         
         stage.setTitle("Domaci2D");
         
+        AnimationTimer timer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                time += 0.017;
+
+                if (time >= 0.2) {
+                    if(!gameOver) {
+                if(aktivnaFigura().getDonjaGranica() == 550 || proveraSudaraNaDole()) {
+                        dodajAktivnuUListNaTabli();
+                        aktivnaFigura().setActive();
+                    try {
+                        if(!gameOver)proveraTriIsteVodoravno();
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(Domaci1C.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                        if(!gameOver){
+                            if(brUnistenih>4)
+                                pomeriDonju();
+                            brUnistenih = 0;
+                            novaFigura();
+                        }
+                        else gameOver();
+                }
+                else {
+                    pomeriAktivnuDole(aktivnaFigura());               
+                }
+              }
+                    time = 0;
+                }
+            }
+        };
+        timer.start();
+        
+    }
+    
+    private void dodavanjeGranice(){
+        levaGranica = new Polygon(150,20,180,20,180,550,150,550);
+        Stop[] stops = new Stop[] { new Stop(0, Color.GRAY), new Stop(0.5, Color.GRAY), new Stop(1, Color.BLUE)};
+        LinearGradient lg = new LinearGradient(150, 20, 180, 20, false, CycleMethod.NO_CYCLE, stops);
+        levaGranica.setFill(lg);
+        root.getChildren().add(levaGranica);
+        
+        desnaGranica = new Polygon(390,20,420,20,420,580,390,550);
+        lg = new LinearGradient(390, 20, 420, 20, false, CycleMethod.NO_CYCLE, stops);
+        desnaGranica.setFill(lg);
+        root.getChildren().add(desnaGranica);
+        
+        donjaGranica = new Polygon(150,550,390,550,420,580,150,580);
+        lg = new LinearGradient(150, 550, 150, 580, false, CycleMethod.NO_CYCLE, stops);
+        donjaGranica.setFill(lg);
+        root.getChildren().add(donjaGranica);
     }
     
     private void zameniBoje(){
@@ -150,13 +220,40 @@ public class Domaci1C extends Application{
         zameniBoje();
     }
     
+    private void addAll2(int x, int y){
+        Polygon leva = new Polygon(x,y,x+15,y+15,x+15,y+105,x,y+120); 
+        Stop[] stops = new Stop[] { new Stop(0, Color.BLACK),  new Stop(1, Color.WHITE)};
+        LinearGradient lg = new LinearGradient(x, y, x+15, y, false, CycleMethod.NO_CYCLE, stops);
+        leva.setFill(lg);
+        root.getChildren().add(leva);
+        
+        Polygon gornja = new Polygon(x,y,x+250,y,x+250-15,y+15,x+15,y+15);
+        lg = new LinearGradient(x,y,x,y+15, false, CycleMethod.NO_CYCLE, stops);
+        gornja.setFill(lg);
+        root.getChildren().add(gornja);
+        
+        Polygon desna = new Polygon(x+250,y,x+250,y+120,x+250-15,y+120-15,x+250-15,y+15);
+        lg = new LinearGradient(x+250,y,x+250-15,y, false, CycleMethod.NO_CYCLE, stops);
+        desna.setFill(lg);
+        root.getChildren().add(desna);
+        
+        Polygon donja = new Polygon(x,y+120,x+250,y+120,x+250-15,y+120-15,x+15,y+120-15);
+        lg = new LinearGradient(x,y+120,x,y+120-15, false, CycleMethod.NO_CYCLE, stops);
+        donja.setFill(lg);
+        root.getChildren().add(donja);
+    }
+    
     private void doradaGranice(){
         Rectangle zuta1 = new Rectangle(150,120,30,10);
-        zuta1.setFill(Color.YELLOW);
+        Stop[] stops = new Stop[] { new Stop(0, Color.YELLOW), new Stop(0.5, Color.YELLOW), new Stop(1, Color.YELLOWGREEN)};
+        LinearGradient lg = new LinearGradient(150, 120, 180, 120, false, CycleMethod.NO_CYCLE, stops);
+        
+        zuta1.setFill(lg);
         root.getChildren().add(zuta1);
         
         Rectangle zuta2 = new Rectangle(390,120,30,10);
-        zuta2.setFill(Color.YELLOW);
+        lg = new LinearGradient(390, 120, 420, 120, false, CycleMethod.NO_CYCLE, stops);
+        zuta2.setFill(lg);
         root.getChildren().add(zuta2);
         
         for(int i = 4 ; i < 12 ; i++){
@@ -225,12 +322,16 @@ public class Domaci1C extends Application{
                         dodajAktivnuUListNaTabli();
                         aktivnaFigura().setActive();
                     try {
-                        proveraTriIsteVodoravno();
+                        if(!gameOver)proveraTriIsteVodoravno();
                     } catch (InterruptedException ex) {
                         Logger.getLogger(Domaci1C.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                        if(!gameOver)
+                        if(!gameOver){
+                            if(brUnistenih>4)
+                                pomeriDonju();
+                            brUnistenih=0;
                             novaFigura();
+                        }
                         else gameOver();
                 }
                 else {
@@ -242,10 +343,32 @@ public class Domaci1C extends Application{
               if(aktivnaFigura().getLevaGranica() > 180 && !gameOver && nemaPreklapanjalevo())
               pomeriAktivnuLevo(aktivnaFigura());
               break;
+          case SPACE:
+              if(gameOver) {
+                  reset();
+                  gameOver = false;
+              }
+              break;
         }
       }
     });
   }
+    
+    private void reset(){
+        brLast.setText(brScore.getText());
+        brScore.resetScore();
+        root.getChildren().remove(gameOverText);
+        for(int i = 0 ; i < 7 ; i++){
+            for(int j = 0; j < 20 ; j++){
+                if(polja[i][j]!= null){
+                    root.getChildren().remove(polja[i][j]);
+                    polja[i][j]= null;
+                }
+            }
+        }
+        brRaw.resetBrake("07");
+        novaFigura();
+    }
     
     private boolean nemaPreklapanjaDesno(){
         for (int i = 0 ; i < figure.size() ; i++){
@@ -270,23 +393,23 @@ public class Domaci1C extends Application{
     }
     
     private void gameOver(){
-        Text gameOverText = new Text();
-        gameOverText.setText("GAME OVER");
-        gameOverText.setTranslateX(182);
+        gameOverText = new Text();
+        gameOverText.setText("                      GAME OVER \n PRESS SPACE FOR NEW GAME");
+        gameOverText.setTranslateX(179);
         gameOverText.setTranslateY(80);
-        gameOverText.setFont(new Font("Copperplate Gothic Bold",30));
+        gameOverText.setFont(new Font("Copperplate Gothic Bold",12));
         gameOverText.setFill(Color.YELLOW);
         root.getChildren().add(gameOverText);
     }
     
-    private void dodajAktivnuUListNaTabli() {
+    private void dodajAktivnuUListNaTabli(){
         for(int i = 0 ; i < 3 ; i ++){
             Bounds boundsInScene = aktivnaFigura().getPolje(i).localToScene(aktivnaFigura().getPolje(i).getBoundsInLocal());
             double x = boundsInScene.getMinX() - 180;
             double y = boundsInScene.getMinY() - 20;
             polja[(int)x / 30][(int)y / 30] = aktivnaFigura().getPolje(i);
         }
-        if(aktivnaFigura().getGornjaGranica() < 120) gameOver = true;
+        if(aktivnaFigura().getGornjaGranica() < 120 ) gameOver = true;
     }
     
     private boolean proveraSudaraNaDole(){
@@ -323,8 +446,7 @@ public class Domaci1C extends Application{
                                             m++;
                                 }
                             sklanjanjeUspravnoVise(i,j+m-1,m);
-                            Thread.sleep(500);
-                            brScore.setVrednostScore();
+                            brScore.setVrednostScore(m);
                             t = false;
                         }
                     }
@@ -350,12 +472,30 @@ public class Domaci1C extends Application{
         
     }
     
+    private void pomeriDonju(){
+       
+        boolean t=true;
+        for(int i = 0 ; i < 7; i++){
+            if(polja[i][16]==null){
+                t=false;
+            }
+        }
+        t= true;
+        if(t) {
+            for(int i = 0 ; i < 7; i++)
+                root.getChildren().remove(polja[i][16]);
+            for(int i = 0 ; i < 7 ; i++){
+                for(int j=15;j >=0 ; j--){
+                    polja[i][j+1]=polja[i][j];
+                    if(polja[i][j]!=null)polja[i][j].setTranslateY(polja[i][j].getTranslateY()+30);
+                }
+            }
+        }
+    }
+    
     private void sklanjanjeUspravnoVise(int i,int j, int k) {
         for(int m = 0 ; m < k ; m++)
             root.getChildren().remove(polja[i][j-m]);
-        //root.getChildren().remove(polja[i][j]);
-        //root.getChildren().remove(polja[i][j-1]);
-        //root.getChildren().remove(polja[i][j-2]);
         for(int n = j ; n > k ; n --){
             
             polja[i][n] = polja[i][n-k];
@@ -365,6 +505,13 @@ public class Domaci1C extends Application{
             }
             
         }  
+        brake++;
+        brRaw.resetBrake(brake+"7");
+        if(brake == 7){
+            brake= 0;
+            brRaw.resetBrake(brake+"7");
+        }
+        brUnistenih+=k;
         
     }
     
@@ -386,8 +533,7 @@ public class Domaci1C extends Application{
                                     k++;
                             }
                             sklanjanjeVodoravnoVise(i,j,k);
-                            Thread.sleep(500);
-                            brScore.setVrednostScore();
+                            brScore.setVrednostScore(k);
                             t = false;
                             brojProvera = 0;
                         }
@@ -409,24 +555,9 @@ public class Domaci1C extends Application{
                 if(polja[i+m][n]!=null){
                     polja[i+m][n].setTranslateY(polja[i+m][n].getTranslateY() + 30);
                 }
-            }/*
-            polja[i][n] = polja[i][n-1];
-            polja[i+1][n] = polja[i+1][n-1];
-            polja[i+2][n] = polja[i+2][n-1];
-            
-            if(polja[i][n]!=null){
-                polja[i][n].setTranslateY(polja[i][n].getTranslateY() + 30);
             }
-            
-            if(polja[i+1][n]!=null){
-                polja[i+1][n].setTranslateY(polja[i+1][n].getTranslateY() + 30);
-            }
-            
-            if(polja[i+2][n]!=null){
-                polja[i+2][n].setTranslateY(polja[i+2][n].getTranslateY() + 30);
-            }
-*/
         }
+        brUnistenih+=k;
     }
     
     private void sklanjanjeVodoravno(int i , int j) {

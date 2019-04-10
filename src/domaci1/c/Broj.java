@@ -33,9 +33,25 @@ public class Broj extends Text{
         setFont(new Font("Copperplate Gothic Bold",40));
     }
     
-    public void setVrednostScore(){
+    public void resetScore(){
+        vrednost=0;
+        
+        text = "000000" + vrednost;;
+        setText(text.substring(text.length()-6,text.length()));
+    }
+    
+    public void resetBrake(String s){
+        text = s;
+        setText(text.substring(text.length()-2,text.length()-1) + "         " + text.substring(text.length()-1,text.length()));
+    }
+    
+    public void resetText(String text){
+        setText(text);
+    }
+    
+    public void setVrednostScore(int n){
 
-        vrednost+=3;
+        vrednost+=n;
         
         text = "000000" + vrednost;;
         setText(text.substring(text.length()-6,text.length()));
